@@ -346,4 +346,217 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from "./db";
+import { eq } from "drizzle-orm";
+
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getTrainer(id: number): Promise<Trainer | undefined> {
+    const [trainer] = await db.select().from(trainers).where(eq(trainers.id, id));
+    return trainer || undefined;
+  }
+
+  async getTrainerByPhone(phoneNumber: string): Promise<Trainer | undefined> {
+    const [trainer] = await db.select().from(trainers).where(eq(trainers.phoneNumber, phoneNumber));
+    return trainer || undefined;
+  }
+
+  async createTrainer(insertTrainer: InsertTrainer): Promise<Trainer> {
+    const [trainer] = await db
+      .insert(trainers)
+      .values({
+        phoneNumber: insertTrainer.phoneNumber,
+        name: insertTrainer.name || null,
+        isActive: insertTrainer.isActive ?? true
+      })
+      .returning();
+    return trainer;
+  }
+
+  async getAllTrainers(): Promise<Trainer[]> {
+    return await db.select().from(trainers);
+  }
+
+  async updateTrainer(id: number, updates: Partial<Trainer>): Promise<Trainer | undefined> {
+    const [trainer] = await db
+      .update(trainers)
+      .set(updates)
+      .where(eq(trainers.id, id))
+      .returning();
+    return trainer || undefined;
+  }
+
+  async getPokemonCard(id: number): Promise<PokemonCard | undefined> {
+    const [card] = await db.select().from(pokemonCards).where(eq(pokemonCards.id, id));
+    return card || undefined;
+  }
+
+  async getAllPokemonCards(): Promise<PokemonCard[]> {
+    return await db.select().from(pokemonCards);
+  }
+
+  async getActivePokemonCards(): Promise<PokemonCard[]> {
+    return await db.select().from(pokemonCards).where(eq(pokemonCards.isActive, true));
+  }
+
+  async createPokemonCard(insertCard: InsertPokemonCard): Promise<PokemonCard> {
+    const [card] = await db
+      .insert(pokemonCards)
+      .values({
+        name: insertCard.name,
+        type: insertCard.type,
+        level: insertCard.level,
+        rarity: insertCard.rarity,
+        imageUrl: insertCard.imageUrl || null,
+        description: insertCard.description || null,
+        isActive: insertCard.isActive ?? true
+      })
+      .returning();
+    return card;
+  }
+
+  async updatePokemonCard(id: number, updates: Partial<PokemonCard>): Promise<PokemonCard | undefined> {
+    const [card] = await db
+      .update(pokemonCards)
+      .set(updates)
+      .where(eq(pokemonCards.id, id))
+      .returning();
+    return card || undefined;
+  }
+
+  async deletePokemonCard(id: number): Promise<boolean> {
+    const result = await db.delete(pokemonCards).where(eq(pokemonCards.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getRandomPokemonCard(): Promise<PokemonCard | undefined> {
+    const activeCards = await this.getActivePokemonCards();
+    if (activeCards.length === 0) return undefined;
+    
+    const randomIndex = Math.floor(Math.random() * activeCards.length);
+    return activeCards[randomIndex];
+  }
+
+  async createCardDistribution(insertDistribution: InsertCardDistribution): Promise<CardDistribution> {
+    const [distribution] = await db
+      .insert(cardDistributions)
+      .values(insertDistribution)
+      .returning();
+    return distribution;
+  }
+
+  async getTrainerCards(trainerId: number): Promise<(CardDistribution & { card: PokemonCard })[]> {
+    const results = await db
+      .select()
+      .from(cardDistributions)
+      .innerJoin(pokemonCards, eq(cardDistributions.cardId, pokemonCards.id))
+      .where(eq(cardDistributions.trainerId, trainerId));
+    
+    return results.map(result => ({
+      ...result.card_distributions,
+      card: result.pokemon_cards
+    }));
+  }
+
+  async getCardDistributions(): Promise<CardDistribution[]> {
+    return await db.select().from(cardDistributions);
+  }
+
+  async createDuel(insertDuel: InsertDuel): Promise<Duel> {
+    const [duel] = await db
+      .insert(duels)
+      .values({
+        trainer1Id: insertDuel.trainer1Id,
+        trainer2Id: insertDuel.trainer2Id || null,
+        arena: insertDuel.arena || null,
+        distance: insertDuel.distance || null,
+        latency: insertDuel.latency || null,
+        status: insertDuel.status || null
+      })
+      .returning();
+    return duel;
+  }
+
+  async getDuel(id: number): Promise<Duel | undefined> {
+    const [duel] = await db.select().from(duels).where(eq(duels.id, id));
+    return duel || undefined;
+  }
+
+  async getAllDuels(): Promise<Duel[]> {
+    return await db.select().from(duels);
+  }
+
+  async getActiveDuels(): Promise<Duel[]> {
+    return await db.select().from(duels).where(eq(duels.status, 'active'));
+  }
+
+  async updateDuel(id: number, updates: Partial<Duel>): Promise<Duel | undefined> {
+    const [duel] = await db
+      .update(duels)
+      .set(updates)
+      .where(eq(duels.id, id))
+      .returning();
+    return duel || undefined;
+  }
+
+  async createBotSession(insertSession: InsertBotSession): Promise<BotSession> {
+    const [session] = await db
+      .insert(botSessions)
+      .values({
+        sessionId: insertSession.sessionId || null,
+        isConnected: insertSession.isConnected ?? false,
+        qrCode: insertSession.qrCode || null
+      })
+      .returning();
+    return session;
+  }
+
+  async updateBotSession(id: number, updates: Partial<BotSession>): Promise<BotSession | undefined> {
+    const [session] = await db
+      .update(botSessions)
+      .set({ ...updates, lastActivity: new Date() })
+      .where(eq(botSessions.id, id))
+      .returning();
+    return session || undefined;
+  }
+
+  async getCurrentBotSession(): Promise<BotSession | undefined> {
+    const [session] = await db
+      .select()
+      .from(botSessions)
+      .orderBy(botSessions.id)
+      .limit(1);
+    return session || undefined;
+  }
+
+  async getStats(): Promise<{ activeDresseurs: number; cardsDistributed: number; activeDuels: number; }> {
+    const activeTrainersResult = await db.select().from(trainers).where(eq(trainers.isActive, true));
+    const distributionsResult = await db.select().from(cardDistributions);
+    const activeDuelsResult = await db.select().from(duels).where(eq(duels.status, 'active'));
+
+    return {
+      activeDresseurs: activeTrainersResult.length,
+      cardsDistributed: distributionsResult.length,
+      activeDuels: activeDuelsResult.length
+    };
+  }
+}
+
+export const storage = new DatabaseStorage();

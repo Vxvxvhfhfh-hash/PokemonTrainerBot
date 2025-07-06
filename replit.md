@@ -112,7 +112,12 @@ The system uses a relational database with the following core entities:
 
 ```
 Changelog:
-- July 06, 2025. Initial setup
+- July 06, 2025. Initial setup with in-memory storage
+- July 06, 2025. Added PostgreSQL database integration
+  - Migrated from MemStorage to DatabaseStorage
+  - Added database relations for all entities
+  - Successfully pushed schema to PostgreSQL
+  - Maintained all existing functionality with persistent storage
 ```
 
 ## User Preferences

@@ -1,4 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -99,3 +100,38 @@ export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
 });
+
+// Relations
+export const trainersRelations = relations(trainers, ({ many }) => ({
+  cardDistributions: many(cardDistributions),
+  duelsAsTrainer1: many(duels, { relationName: "trainer1" }),
+  duelsAsTrainer2: many(duels, { relationName: "trainer2" }),
+}));
+
+export const pokemonCardsRelations = relations(pokemonCards, ({ many }) => ({
+  distributions: many(cardDistributions),
+}));
+
+export const cardDistributionsRelations = relations(cardDistributions, ({ one }) => ({
+  trainer: one(trainers, {
+    fields: [cardDistributions.trainerId],
+    references: [trainers.id],
+  }),
+  card: one(pokemonCards, {
+    fields: [cardDistributions.cardId],
+    references: [pokemonCards.id],
+  }),
+}));
+
+export const duelsRelations = relations(duels, ({ one }) => ({
+  trainer1: one(trainers, {
+    fields: [duels.trainer1Id],
+    references: [trainers.id],
+    relationName: "trainer1",
+  }),
+  trainer2: one(trainers, {
+    fields: [duels.trainer2Id],
+    references: [trainers.id],
+    relationName: "trainer2",
+  }),
+}));
