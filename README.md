@@ -40,11 +40,10 @@ npm run dev
 
 1. **Variables d'environnement** :
    - `DATABASE_URL` : URL de connexion PostgreSQL (Neon Database recommandé)
-   - `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`, `PGDATABASE` : Paramètres PostgreSQL
 
 2. **Fichiers de configuration** :
-   - `vercel.json` : Configuration des routes et fonctions
-   - `api/index.ts` : Point d'entrée pour les fonctions serverless
+   - `vercel.json` : Configuration optimisée (sans conflits builds/functions)
+   - `api/index.ts` : Routes API complètes pour serverless
 
 ### Étapes de déploiement
 
