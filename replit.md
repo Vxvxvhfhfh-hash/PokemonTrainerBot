@@ -118,6 +118,12 @@ Changelog:
   - Added database relations for all entities
   - Successfully pushed schema to PostgreSQL
   - Maintained all existing functionality with persistent storage
+- July 06, 2025. Added Vercel deployment support
+  - Created vercel.json configuration with serverless functions
+  - Added WhatsApp service adapter for Vercel environment
+  - Environment-aware service selection (local vs Vercel)
+  - API routes compatible with Vercel Functions
+  - Build scripts and deployment documentation
 ```
 
 ## User Preferences

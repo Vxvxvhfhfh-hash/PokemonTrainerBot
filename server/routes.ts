@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { whatsappService } from "./services/whatsapp";
+import { whatsappVercelService } from "./services/whatsapp-vercel";
 import { 
   insertTrainerSchema, 
   insertPokemonCardSchema, 
@@ -18,8 +19,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     path: '/ws' 
   });
 
+  // Determine environment and use appropriate service
+  const isVercel = process.env.VERCEL === '1' || process.env.VERCEL_ENV;
+  const currentService = isVercel ? whatsappVercelService : whatsappService;
+  
   // Configure WhatsApp service with WebSocket
-  whatsappService.setWebSocketServer(wss);
+  currentService.setWebSocketServer(wss);
+  
+  console.log(`Environment: ${isVercel ? 'Vercel' : 'Local'} - Using ${isVercel ? 'Vercel' : 'Standard'} WhatsApp service`);
 
   // WebSocket connection handling
   wss.on('connection', (ws) => {
@@ -31,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         switch (data.type) {
           case 'get_status':
-            const isConnected = await whatsappService.getConnectionStatus();
+            const isConnected = await currentService.getConnectionStatus();
             ws.send(JSON.stringify({ 
               type: 'status_update', 
               data: { isConnected } 
@@ -39,7 +46,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
             
           case 'get_qr_code':
-            const qrCode = await whatsappService.getQRCode();
+            const qrCode = await currentService.getQRCode();
             ws.send(JSON.stringify({ 
               type: 'qr_code', 
               data: qrCode 
@@ -47,7 +54,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
             
           case 'send_test_message':
-            const success = await whatsappService.sendMessage(data.to, data.message);
+            const success = await currentService.sendMessage(data.to, data.message);
             ws.send(JSON.stringify({ 
               type: 'message_sent', 
               data: { success } 
@@ -69,7 +76,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Initialize WhatsApp service
-  whatsappService.initialize().catch(console.error);
+  if (isVercel) {
+    // Vercel service initializes automatically
+    console.log('WhatsApp service initialized for Vercel');
+  } else {
+    whatsappService.initialize().catch(console.error);
+  }
 
   // API Routes
 
@@ -86,8 +98,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Bot status
   app.get('/api/bot/status', async (req, res) => {
     try {
-      const isConnected = await whatsappService.getConnectionStatus();
-      const qrCode = await whatsappService.getQRCode();
+      const isConnected = await currentService.getConnectionStatus();
+      const qrCode = await currentService.getQRCode();
       res.json({ isConnected, qrCode });
     } catch (error) {
       res.status(500).json({ error: 'Erreur lors de la récupération du statut' });
