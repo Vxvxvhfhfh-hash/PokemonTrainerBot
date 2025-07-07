@@ -6,8 +6,10 @@ export class WhatsAppVercelService {
   private wss: WebSocketServer | null = null;
   private isReady = false;
   private simulatedQR = false;
+  private localServerUrl: string;
 
   constructor() {
+    this.localServerUrl = process.env.LOCAL_WHATSAPP_URL || 'http://localhost:3001';
     this.initialize();
   }
 
@@ -159,15 +161,37 @@ ${cardsList || '• Aucune carte disponible'}
   }
 
   async getQRCode(): Promise<string | null> {
+    try {
+      // Essaie d'obtenir le QR code du serveur local
+      const response = await fetch(`${this.localServerUrl}/api/qr`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.qrCode;
+      }
+    } catch (error) {
+      console.log('Serveur local non disponible, utilisation du mode simulation');
+    }
+
+    // Fallback: QR code simulé si le serveur local n'est pas disponible
     if (!this.simulatedQR) {
       return null;
     }
-
-    // Génère un QR code simulé pour Vercel
     return `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==`;
   }
 
   async getConnectionStatus(): Promise<boolean> {
+    try {
+      // Vérifier le statut du serveur local
+      const response = await fetch(`${this.localServerUrl}/api/status`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.isReady;
+      }
+    } catch (error) {
+      console.log('Serveur local non disponible');
+    }
+    
+    // Fallback au statut simulé
     return this.isReady;
   }
 

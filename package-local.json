@@ -1,0 +1,23 @@
+{
+  "name": "whatsapp-pokemon-bot-local",
+  "version": "1.0.0",
+  "description": "Serveur WhatsApp local pour le bot Pokémon",
+  "main": "local-whatsapp-server.js",
+  "scripts": {
+    "start": "node local-whatsapp-server.js",
+    "dev": "nodemon local-whatsapp-server.js",
+    "install-local": "npm install whatsapp-web.js express cors qrcode nodemon"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.31.0",
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["whatsapp", "bot", "pokemon", "qrcode"],
+  "author": "Pokemon Bot Team",
+  "license": "MIT"
+}
